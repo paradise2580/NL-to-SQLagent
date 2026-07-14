@@ -1,0 +1,96 @@
+version: '3'
+
+services:
+  # Frontend - Next.js Client
+  client:
+    container_name: ctyd-client
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+    ports:
+      - '3000:3000'
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:5001/api
+      - SERVER_API_URL=http://nestapp:5001/api
+      - NEXTAUTH_URL=http://localhost:3000
+      - NEXTAUTH_SECRET=3IwWoWDFmSsi4Ik4ckX9ZuyWvpjSePz4NR0tFhFKpvQ=
+    volumes:
+      - ./client:/app
+      - /app/node_modules
+    networks:
+      - ctyd_bridge
+    depends_on:
+      - nestapp
+
+  # Backend - NestJS API
+  nestapp:
+    container_name: ctyd-nestapp
+    image: ctyd-nestapp
+    build:
+      dockerfile: Dockerfile
+      context: ./nest_api
+    ports:
+      - '5001:5001'
+    env_file:
+      - .env
+    networks:
+      - ctyd_bridge
+    volumes:
+      - ./nest_api:/usr/src/app
+      - /usr/src/app/node_modules
+      - /var/run/docker.sock:/var/run/docker.sock
+    depends_on:
+      - mongodb
+
+  # PostgreSQL Database
+  postgres:
+    container_name: ctyd-postgres
+    image: postgres:12
+    ports:
+      - '5432:5432'
+    env_file:
+      - .env
+    networks:
+      - ctyd_bridge
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./nest_api/src/dbDumpFile:/dbDumpFile
+      - /var/run/docker.sock:/var/run/docker.sock
+
+  # pgAdmin for PostgreSQL Management
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: ctyd-pgadmin4
+    env_file:
+      - .env
+    networks:
+      - ctyd_bridge
+    ports:
+      - '5050:80'
+    depends_on:
+      - postgres
+
+  # MongoDB Database
+  mongodb:
+    image: mongo:6.0
+    container_name: ctyd-mongodb
+    env_file:
+      - .env
+    networks:
+      - ctyd_bridge
+    ports:
+      - '27018:27017'
+    healthcheck:
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    volumes:
+      - mongodbdata:/data/db
+
+networks:
+  ctyd_bridge:
+    driver: bridge
+
+volumes:
+  pgdata: {}
+  mongodbdata: {}
