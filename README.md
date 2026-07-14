@@ -71,7 +71,7 @@ graph TB
     C --> D1[🧠 OpenAI GPT Models]
     C --> D2[⚡ Groq LLMs]
     B --> E[🔐 JWT Auth Service]
-    B --> F[(🐘 PostgreSQL)]
+    B --> F[(🐘 SingleStore)]
     B --> G[(💾 SQLite)]
     B --> H[(🍃 MongoDB)]
     B --> I[📝 Query History Service]
